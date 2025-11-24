@@ -22,7 +22,9 @@
 
     #game-container {
       width: 400px;
+      max-width: 100vw;
       height: 700px;
+      max-height: 100vh;
       border-radius: 20px;
       overflow: hidden;
       position: relative;
@@ -35,6 +37,10 @@
       inset: 0;
       overflow: hidden;
       background: linear-gradient(#bde7ff, #e6f7ff);
+
+      /* IMPORTANTE PARA TÁCTIL */
+      touch-action: none;
+      user-select: none;
     }
 
     #hud {
@@ -204,7 +210,7 @@
       background: #2d6fa8;
     }
 
-    /* Doctor gordito con lentes (para overlay y decoración) */
+    /* Doctor gordito con lentes */
     .doctor-main .body {
       background: #1f9ad0;
     }
@@ -408,7 +414,7 @@
         </div>
       </div>
 
-      <div id="hint">Usa ← → o A / D para moverte</div>
+      <div id="hint">Usa ← → / A D o arrastra con el dedo</div>
 
       <!-- Overlay con doctores tipo invitación -->
       <div id="overlay">
@@ -464,7 +470,7 @@
     const patientWidth = 60;
     const patientSpeed = 6;
 
-    let moveDirection = 0; // -1 izquierda, 1 derecha
+    let moveDirection = 0; // -1 izquierda, 1 derecha (teclado)
     let items = [];
     let score = 0;
     let lives = 3;
@@ -473,6 +479,11 @@
     const spawnInterval = 900; // ms
     const targetScore = 10;
     let phase = "game"; // game | ended
+
+    // Variables para táctil
+    let isTouching = false;
+    let touchStartX = 0;
+    let patientStartX = 0;
 
     function updateLivesDisplay() {
       const full = "❤️".repeat(lives);
@@ -546,12 +557,14 @@
       const delta = timestamp - lastFrameTime;
       lastFrameTime = timestamp;
 
-      // mover paciente
-      const maxX = gameArea.clientWidth - patientWidth;
-      patientX += moveDirection * patientSpeed;
-      if (patientX < 0) patientX = 0;
-      if (patientX > maxX) patientX = maxX;
-      patient.style.left = patientX + "px";
+      // mover paciente con teclado (si no se está usando táctil)
+      if (!isTouching) {
+        const maxX = gameArea.clientWidth - patientWidth;
+        patientX += moveDirection * patientSpeed;
+        if (patientX < 0) patientX = 0;
+        if (patientX > maxX) patientX = maxX;
+        patient.style.left = patientX + "px";
+      }
 
       // spawn
       if (timestamp - lastSpawnTime > spawnInterval) {
@@ -601,6 +614,7 @@
       requestAnimationFrame(gameLoop);
     }
 
+    // CONTROLES TECLADO
     document.addEventListener("keydown", (e) => {
       if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
         moveDirection = -1;
@@ -622,6 +636,43 @@
         moveDirection = 0;
       }
     });
+
+    // CONTROLES TÁCTILES (arrastrar personaje)
+    function handleTouchStart(e) {
+      if (phase !== "game") return;
+      const touch = e.touches[0];
+      const rect = gameArea.getBoundingClientRect();
+      const xInside = touch.clientX - rect.left;
+
+      isTouching = true;
+      touchStartX = xInside;
+      patientStartX = patientX;
+    }
+
+    function handleTouchMove(e) {
+      if (!isTouching || phase !== "game") return;
+      const touch = e.touches[0];
+      const rect = gameArea.getBoundingClientRect();
+      const xInside = touch.clientX - rect.left;
+
+      const dx = xInside - touchStartX;
+      const maxX = gameArea.clientWidth - patientWidth;
+      patientX = patientStartX + dx;
+      if (patientX < 0) patientX = 0;
+      if (patientX > maxX) patientX = maxX;
+      patient.style.left = patientX + "px";
+
+      e.preventDefault(); // evita scroll
+    }
+
+    function handleTouchEnd() {
+      isTouching = false;
+    }
+
+    gameArea.addEventListener("touchstart", handleTouchStart, { passive: false });
+    gameArea.addEventListener("touchmove", handleTouchMove, { passive: false });
+    gameArea.addEventListener("touchend", handleTouchEnd);
+    gameArea.addEventListener("touchcancel", handleTouchEnd);
 
     restartBtn.addEventListener("click", resetGame);
 
