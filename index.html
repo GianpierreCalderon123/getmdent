@@ -379,6 +379,35 @@
       z-index: 6;
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
     }
+    .falling-item {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  top: -50px;
+  z-index: 2;
+  overflow: hidden; /* para que no se salga la imagen */
+}
+
+.item-icon {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+}
+
+.falling-item.good {
+  background: #5dd37b;
+}
+
+.falling-item.bad {
+  background: #ff6666;
+}
+
   </style>
 </head>
 <body>
@@ -468,7 +497,13 @@
       const isGood = Math.random() > 0.4; // más prob de buenos
       itemEl.classList.add("falling-item");
       itemEl.classList.add(isGood ? "good" : "bad");
-      itemEl.textContent = isGood ? "🪥" : "🦠";
+      
+      if (isGood) {
+  itemEl.innerHTML = '<img src="cepillo.png" class="item-icon">';
+} else {
+  itemEl.innerHTML = '<img src="caries.png" class="item-icon">';
+}
+      
       const maxX = gameArea.clientWidth - 40;
       const x = Math.random() * maxX;
       itemEl.style.left = x + "px";
@@ -657,6 +692,7 @@
   </script>
 </body>
 </html>
+
 
 
 
